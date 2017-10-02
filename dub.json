@@ -4,7 +4,7 @@
 		"Mark Fisher"
 	],
 	"dependencies": {
-		"pegged": "~>0.4.2",
+		"pegged": "~master",
 		"embd": "~>0.2.1"
 	},
 	"description": "MetaD compile time compiler.",
