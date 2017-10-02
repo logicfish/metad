@@ -8,12 +8,12 @@ private import pegged.grammar;
  + To use: (see the unittest for a running example)
  +
  + Create your pegged grammar.
- +    enum _g = q{ ... };
+ +    enum _g = q{ GRAMMAR: ... };
  +    mixin (grammar(_g));
  +
- + Create a template for your parser, and mixin the default compiler.
- +   template myParser(ParseTree T,alias Parser=myParser) {
- +      mixin Compiler!(T,Parser);
+ + Create a template for your compiler, and mixin the default signature.
+ +   struct myCompiler(ParseTree T) {
+ +      mixin Compiler!(T,myCompiler);
  +      // ....
  +   }
  +
@@ -103,7 +103,7 @@ GRAMMAR:
     };
     mixin(grammar(_g));
     
-    template myParser(ParseTree T,alias Parser=myParser) {
+    struct myCompiler(ParseTree T,alias Parser=myCompiler) {
         mixin Compiler!(T,Parser);
         mixin (compilerDocNode!("compileChildNodes().join(\"\")"));
         mixin (compilerOverride!("GRAMMAR.Text","T.matches.join(\"\")"));
@@ -123,11 +123,11 @@ GRAMMAR:
     };
     pragma(msg,"Compiling:\n"~_d);
 
-    enum compiled = myParser!(GRAMMAR(_d)).compileNode();
+    enum compiled = myCompiler!(GRAMMAR(_d)).compileNode();
     pragma(msg,"Compiled to:\n" ~ compiled);
     //mixin(compiled);
     
-    mixin Compiler!(myParser,GRAMMAR(_d));
+    mixin Compiler!(myCompiler,GRAMMAR(_d));
     static assert(mixin("m.t.v") == "v");
 
 }
