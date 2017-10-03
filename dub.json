@@ -3,6 +3,7 @@
 	"authors": [
 		"Mark Fisher"
 	],
+    "targetType" : "library",
 	"dependencies": {
 		"pegged": "~master"
 	},
