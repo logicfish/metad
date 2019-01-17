@@ -5,7 +5,7 @@
 	],
     "targetType" : "library",
 	"dependencies": {
-		"pegged": "~master"
+		"pegged": "~>0.4.4"
 	},
 	"description": "MetaD compile time compiler.",
 	"copyright": "Copyright © 2017, Mark Fisher",

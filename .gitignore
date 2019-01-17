@@ -29,3 +29,4 @@ docs/
 
 # Code coverage
 *.lst
+*.wssettings
