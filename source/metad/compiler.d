@@ -48,7 +48,7 @@ private import std.algorithm;
  + that particular node type.
  +/
 
- template LoadGrammar(string fname,string docRoot) {
+ template loadGrammar(string fname,string docRoot) {
      mixin(grammar(import(fname)));
      enum parser = mixin(docRoot);
  }
@@ -110,8 +110,8 @@ unittest {
 
     import pegged.grammar;
 
-    // A grammar that parses {{Template}}
-    // statements in a body of text.
+    // A grammar that expands {{Template}} into 
+    // statements.
     enum _g = q{
 GRAMMAR(Template):
     Doc <- Line+ :endOfInput
@@ -144,7 +144,7 @@ GRAMMAR(Template):
         // Override two node types: GRAMMAR.Text and identifier.
         // GRAMMAR.Text is just the matches array values concantenated.
         mixin (compilerOverride!("GRAMMAR.Text","T.matches.join"));
-        // identified is a mixin of the matches value.
+        // identifier returns a mixin of the matches value.
         mixin (compilerOverride!("identifier","mixin(T.matches.join)"));
     }
 
