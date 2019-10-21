@@ -2,7 +2,7 @@ module metad.interp;
 
 private import pegged.grammar;
 
-private import std.string;
+private import std.array;
 private import std.typecons;
 private import std.algorithm;
 
@@ -26,22 +26,23 @@ private import metad.compiler;
      }
  }
 
-template Interpreter(N) {
-  static string[] interpChildNodes(N nodes,ParseTree t) {
-      string[] result;
+template Interpreter(T,N) {
+  static T[] interpChildNodes(N nodes,ParseTree t) {
+      T[] result;
       foreach(x;t.children) {
-          result~=Interpreter!N(nodes,x);
+          result~=Interpreter!(T,N)(nodes,x);
       }
       return result;
   }
     //return Parser(data.name)(data);
-  string Interpreter(N nodes,ParseTree data) {
+  T Interpreter(N nodes,ParseTree data) {
     import std.stdio;
     writeln("Interpreter " ~ data.name);
     if(data.name in nodes) {
       return nodes[data.name](data);
     }
     return interpChildNodes(nodes,data).join("");
+    //return interpChildNodes(nodes,data);
   }
 }
 
@@ -99,7 +100,7 @@ GRAMMAR(Template):
       nodes["GRAMMAR.Text"] = f=>f.matches.join("");
       nodes["identifier"] = (f)=>idParser(f.matches.join(""));
 
-      return Interpreter(nodes,t);
+      return Interpreter!(string,typeof(nodes))(nodes,t);
     }
     auto interp = myInterpreter(GRAMMAR!identifier(_d));
     writeln(" INTERP: " ~ interp);

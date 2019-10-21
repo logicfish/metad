@@ -82,14 +82,16 @@ template Compiler(ParseTree T,alias Parser) {
         enum nodeOverride = q{
             static if(__C__) {
                 static string compileNode() {
-                    return __F__;
+                    __F__;
                 }
             }
         }.replace("__C__",Cond).replace("__F__",Func);
     }
 
     template compilerOverride(string N,string F) {
-        enum compilerOverride = nodeOverride!("T.name == \""~N~"\"",F);
+        enum compilerOverride = nodeOverride!(
+            "T.name == \""~N~"\"",
+            "return " ~ F);
     }
 
     template compile(alias Parser) {
