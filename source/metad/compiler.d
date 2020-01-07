@@ -5,6 +5,7 @@ private import pegged.grammar;
 private import std.string;
 private import std.typecons;
 private import std.algorithm;
+public import std.array;
 
 /++
  + A compile-time compiler (meta-compiler).
@@ -94,8 +95,11 @@ template Compiler(ParseTree T,alias Parser) {
             "return " ~ F);
     }
 
-    template compile(alias Parser) {
+    /*template compile(alias Parser) {
         mixin(Parser.compileNode);
+    }*/
+    template compile() {
+        alias compile = mixin(compileNode);
     }
 }
 
@@ -112,7 +116,63 @@ unittest {
 
     import pegged.grammar;
 
-    // A grammar that expands {{Template}} into 
+    // A grammar that expands {{Template}} into
+    // statements.
+    enum _g = q{
+GRAMMAR(Template):
+    Doc <- Line+ :endOfInput
+    Line <- (Var / Text)
+    Var <- :LDelim ^Template :RDelim
+    LDelim <- "{{"
+    RDelim <- "}}"
+    Text <- ~((!LDelim) Char )*
+    Char <- .
+    };
+    mixin(grammar(_g));
+
+    // Replace these identifiers in the input
+    enum __M = "MyStruct";
+    enum __T = "MyType";
+
+    // some input data.
+    enum _d = q{
+        struct {{__T}} {
+            enum v = 'v';
+            struct {{__M}} {
+            };
+            static {{__M}} m;
+        };
+    };
+
+    // Create a compiler from the parse tree.
+    struct myCompiler(ParseTree T,alias Parser=myCompiler) {
+        mixin Compiler!(T,Parser);
+        // Override two node types: GRAMMAR.Text and identifier.
+        // GRAMMAR.Text is just the matches array values concantenated.
+        mixin (compilerOverride!("GRAMMAR.Text","T.matches.join"));
+        // identifier returns a mixin of the matches value.
+        mixin (compilerOverride!("identifier","mixin(T.matches.join)"));
+    }
+
+    pragma(msg,"Compiling:\n"~_d);
+    pragma(msg,"Tree:\n" ~ GRAMMAR!identifier(_d).toString);
+
+    enum compiled = myCompiler!(GRAMMAR!identifier(_d)).compileNode();
+    pragma(msg,"Compiled to:\n" ~ compiled);
+    mixin(compiled);
+
+    static assert(mixin("MyType.v") == 'v');
+}
+
+unittest {
+    import std.array;
+    import std.typecons;
+    import std.string;
+    import std.algorithm;
+
+    import pegged.grammar;
+
+    // A grammar that expands {{Template}} into
     // statements.
     enum _g = q{
 GRAMMAR(Template):

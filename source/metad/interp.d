@@ -35,14 +35,12 @@ template Interpreter(T,N) {
       return result;
   }
     //return Parser(data.name)(data);
-  T Interpreter(N nodes,ParseTree data) {
+  T[] Interpreter(N nodes,ParseTree data) {
     import std.stdio;
-    writeln("Interpreter " ~ data.name);
     if(data.name in nodes) {
-      return nodes[data.name](data);
+      return [nodes[data.name](data)];
     }
-    return interpChildNodes(nodes,data).join("");
-    //return interpChildNodes(nodes,data);
+    return interpChildNodes(nodes,data);
   }
 }
 
@@ -100,7 +98,7 @@ GRAMMAR(Template):
       nodes["GRAMMAR.Text"] = f=>f.matches.join("");
       nodes["identifier"] = (f)=>idParser(f.matches.join(""));
 
-      return Interpreter!(string,typeof(nodes))(nodes,t);
+      return Interpreter!(string,typeof(nodes))(nodes,t).join("");
     }
     auto interp = myInterpreter(GRAMMAR!identifier(_d));
     writeln(" INTERP: " ~ interp);
