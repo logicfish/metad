@@ -35,8 +35,6 @@ template Interpreter(N) {
 		return result;
 	}
 	Variant[] Interpreter(N nodes,ParseTree data) {
-		import std.stdio;
-		writeln("Interpreter " ~ data.name);
 		if(data.name in nodes) {
 			return [nodes[data.name](data)];
 		}
@@ -95,7 +93,7 @@ unittest {
 		//nodes["GRAMMAR.Var"] = f=>idParser(f.children[1].matches);
 		nodes["GRAMMAR.LDelim"] = f=>Variant();
 		nodes["GRAMMAR.RDelim"] = f=>Variant();
-s		nodes["GRAMMAR.Text"] = f=>Variant(f.matches.join(""));
+		nodes["GRAMMAR.Text"] = f=>Variant(f.matches.join(""));
 		nodes["identifier"] = (f)=>Variant(idParser(f.matches.join("")));
 
 		return Interpreter(nodes,t);
