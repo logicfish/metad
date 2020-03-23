@@ -102,8 +102,6 @@ unittest {
 	
 	import std.conv;
 	auto interpString = interp.map!(x=>x.to!string).join("");
-    writeln(" INTERP: " ~ interpString );
-    
 	auto expected = _d.replace("{{__T}}",__T).replace("{{__M}}",__M);
     assert(interpString == expected,"Expected: "~expected ~ "\nGot: "~interpString);
 }
