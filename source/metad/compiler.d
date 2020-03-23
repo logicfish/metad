@@ -70,6 +70,9 @@ template Compiler(ParseTree T,alias Parser) {
     static string[] compileChildNodes() {
         string[] result;
         static foreach(x;T.children) {
+			debug(MetaDCompile) {
+				pragma(msg,"compileChildNodes:\n"~Parser!(x).compileNode);
+			}
             result~=Parser!(x).compileNode;
         }
         return result;
@@ -82,7 +85,7 @@ template Compiler(ParseTree T,alias Parser) {
     template nodeOverride(string Cond,string Func) {
         enum nodeOverride = q{
             static if(__C__) {
-                static string compileNode() {
+                static auto compileNode() {
                     __F__;
                 }
             }
@@ -99,6 +102,10 @@ template Compiler(ParseTree T,alias Parser) {
         mixin(Parser.compileNode);
     }*/
     template compile() {
+		debug(MetaDCompile) {
+			pragma(msg,"compile:\n"~compileNode);
+			pragma(msg,"data:\n"~T.toString);
+		}
         alias compile = mixin(compileNode);
     }
 }
