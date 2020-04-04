@@ -1,13 +1,25 @@
 {
-	"name": "metad",
-	"authors": [
-		"Mark Fisher"
-	],
-    "targetType" : "library",
-	"dependencies": {
-		"pegged": "~>0.4.4"
-	},
-	"description": "MetaD compile time compiler.",
-	"copyright": "Copyright © 2017, Mark Fisher",
-	"license": "MIT"
+    "name": "metad",
+    "authors": [
+        "Mark Fisher"
+    ],
+    "dependencies": {
+        "pegged": "~>0.4.4"
+    },
+    "stringImportPaths": [ "resources" ],
+    "description": "MetaD compile time compiler.",
+    "copyright": "Copyright © 2017, Mark Fisher",
+    "license": "MIT",
+    "configurations": [
+        {
+            "name": "library",
+            "targetType": "library",
+        },
+        {
+            "name": "generate",
+            "targetType": "executable",
+            "versions": [ "ElementsGrammar_Generate","INIGrammar_Generate" ]
+        }
+    ]
+    
 }

@@ -5,7 +5,8 @@ private import pegged.grammar;
 private import std.string;
 private import std.typecons;
 private import std.algorithm;
-public import std.array;
+private import std.array;
+private import std.traits;
 
 /++
  + A compile-time compiler (meta-compiler).
@@ -64,55 +65,191 @@ public import std.array;
      mixin Compiler!(_Compiler,_data);
  }
 
+ /++
+ UDA to indicate a method to process a compiler node.
+ ++/
+ struct MatchName {
+	string name;
+ }
+ /++
+ UDA to indicate a method to process a compiler node.
+ ++/
+ struct MatchCond {
+	string cond;
+ }
+
+/*struct Match(alias T) {
+	string name() {
+		return fullyQualifiedName!T;
+	}
+}*/
 
 template Compiler(ParseTree T,alias Parser) {
-
-    static string[] compileChildNodes() {
-        string[] result;
-        static foreach(x;T.children) {
-			debug(MetaDCompile) {
-				pragma(msg,"compileChildNodes:\n"~Parser!(x).compileNode);
-			}
-            result~=Parser!(x).compileNode;
-        }
-        return result;
+	/++
+	A string-match function. If the name of a node matches N, then the an override of 'compileNode' is generated 
+	returning the value F in the generated compiler.
+	++/
+    template compilerOverride(string N,string F) {
+        enum compilerOverride = nodeOverride!(
+											  "T.name == \""~N~"\"",
+											  "return " ~ F);
     }
 
-    static string compileNode() {
-        return compileChildNodes().join("");
-    }
+	/++
 
+	Add an match funtion to the compile tree. The condition is a compile-time expression which is 
+	used in a static if statement: `static if(Cond)` in the declaration of the overriden function, in the 
+	generated compiler. Func is the body of the required operation if the condition succeeds.
+	The generated function is always called `compileNode`, with a static 'if' represented by the `Cond` parameter.
+	Inside the function, the parse tree can be accessed as the variable `T`, which is the value passed as the first parameter to the 
+	`Compile` template.
+
+	The return is a constant string that should be mixed in to the compiler generated in the client.
+
+	++/
     template nodeOverride(string Cond,string Func) {
-        enum nodeOverride = q{
+        /*enum nodeOverride = q{
             static if(__C__) {
                 static auto compileNode() {
                     __F__;
                 }
             }
+        }.replace("__C__",Cond).replace("__F__",Func);*/
+        enum nodeOverride = q{
+                static auto compileNode()()
+					if(__C__) {
+						__F__;
+                }
         }.replace("__C__",Cond).replace("__F__",Func);
+
     }
 
-    template compilerOverride(string N,string F) {
-        enum compilerOverride = nodeOverride!(
-            "T.name == \""~N~"\"",
-            "return " ~ F);
-    }
-
-    /*template compile(alias Parser) {
-        mixin(Parser.compileNode);
-    }*/
-    template compile() {
+    static auto compileNode()() {
 		debug(MetaDCompile) {
-			pragma(msg,"compile:\n"~compileNode);
+			pragma(msg,"compileNode\n");
+		}
+        return compileChildNodes().join;
+    }
+
+    static string[] compileChildNodes() {
+        string[] result;
+        static foreach(x;T.children) {
+			debug(MetaDCompile) {
+				pragma(msg,"compileChildNodes:\n"~Parser!(x).compileNode());
+			}
+            result~=Parser!(x).compileNode();
+        }
+        return result;
+    }
+
+	static string compileChild(int index)() {
+		debug(MetaDCompile) {
+			pragma(msg,"compileChild:\n"~Parser!(T.children[index]).compileNode());
+		}
+		return Parser!(T.children[index]).compileNode();
+	}
+
+	/++
+	Compile the tree to an inline expression.
+	++/
+    mixin template compile() {
+		debug(MetaDCompile) {
+			pragma(msg,"compile:\n"~compileNode());
 			pragma(msg,"data:\n"~T.toString);
 		}
-        alias compile = mixin(compileNode);
+        alias compile = mixin(compileNode());
     }
+	/++
+	Compile the tree to a list of statements.
+	++/
+	mixin template compileStatements() {
+		debug(MetaDCompile) {
+			pragma(msg,"compileStatements:\n"~compileNode());
+			pragma(msg,"data:\n"~T.toString);
+		}
+        mixin(compileNode());
+	}
+
+//	mixin template processTypeAnnotations(A) {
+	static string processTypeAnnotations(A)() {
+		import std.traits;
+		string result="";
+		static foreach (sym;getSymbolsByUDA!(A,MatchCond)) {
+			debug(MetaDCompile) {
+				pragma(msg,"MatchCond:"~fullyQualifiedName!sym);
+			}
+			static foreach (attr;getUDAs!(sym,MatchCond)) {
+				debug(MetaDCompile) {
+					pragma(msg,"+MatchCond: "~attr);
+				}
+				//mixin(nodeOverride!(attr.cond,fullyQualifiedName!sym));
+				result ~= nodeOverride!(attr.cond,fullyQualifiedName!sym~"(T)");
+			}
+		}
+		static foreach (sym;getSymbolsByUDA!(A,MatchName)) {
+			debug(MetaDCompile) {
+				pragma(msg,"MatchName:"~fullyQualifiedName!sym);
+			}
+			static foreach (attr;getUDAs!(sym,MatchName)) {
+				debug(MetaDCompile) {
+					pragma(msg,"+MatchName:"~attr.name);
+				}
+				//mixin(compilerOverride!(attr.name,fullyQualifiedName!sym));
+				result ~= compilerOverride!(attr.name,fullyQualifiedName!sym~"(T)");
+			}
+		}
+		/*static foreach (sym;getSymbolsByUDA!(A,Match)) {
+			debug(MetaDCompile) {
+				pragma(msg,"Match:"~fullyQualifiedName!sym);
+			}
+			static foreach (attr;getUDAs!(sym,Match)) {
+				debug(MetaDCompile) {
+					pragma(msg,"+Match:"~attr.name);
+				}
+				//mixin(compilerOverride!(attr.name,fullyQualifiedName!sym));
+				result ~= compilerOverride!(attr.name,fullyQualifiedName!sym~"(T)");
+			}
+		}*/
+		return result;
+	}
+
+
 }
 
-template Compiler(alias Parser,ParseTree data) {
+/*template Compiler(alias Parser,ParseTree data) {
     alias _compiler = Parser!(data);
     mixin _compiler.compile!(_compiler);
+}*/
+
+void compileToModule(alias Compiler)(string moduleName,string filename,string optHeader="") {
+	import std.stdio;
+	auto f = File(filename ~ ".d","w");
+	f.write("/++\nThis module was automatically generated.\n\n");
+	f.write("\n\n+/\n");		
+	
+	f.writefln("module %s;",moduleName);
+	
+	if (optHeader.length > 0)
+        f.write(optHeader ~ "\n\n");
+
+	f.write(Compiler.compileNode);
+}
+
+void compileExpressionToModule(alias Compiler)(string moduleName,string filename,string optHeader="") {
+	import std.stdio;
+	auto f = File(filename ~ ".d","w");
+	f.write("/++\nThis module was automatically generated.\n\n");
+	f.writeln(Compiler.compileNode);
+	f.write("\n\n+/\n");		
+
+	f.writefln("module %s;",moduleName);
+
+	if (optHeader.length > 0)
+        f.write(optHeader ~ "\n\n");
+
+	f.write("enum __EXPR = ");
+	f.write(Compiler.compileNode);
+	f.write(";\n\n");
 }
 
 unittest {
@@ -159,6 +296,14 @@ GRAMMAR(Template):
         mixin (compilerOverride!("GRAMMAR.Text","T.matches.join"));
         // identifier returns a mixin of the matches value.
         mixin (compilerOverride!("identifier","mixin(T.matches.join)"));
+
+		// For some reason the compiler isn't finding the default catch-all case. We have to mixin every node type.
+		//mixin (nodeOverride!("true","return compileChildNodes().join;"));
+		mixin (nodeOverride!("T.name != \"GRAMMAR.Text\" && T.name != \"identifier\"","return compileChildNodes().join;"));
+/*		mixin (compilerOverride!("GRAMMAR.Doc","compileChildNodes.join;"));
+		mixin (compilerOverride!("GRAMMAR.Line","compileChildNodes.join;"));
+		mixin (compilerOverride!("GRAMMAR.Var","compileChildNodes.join;"));
+		mixin (compilerOverride!("GRAMMAR","compileChildNodes.join;"));*/
     }
 
     pragma(msg,"Compiling:\n"~_d);
@@ -169,8 +314,9 @@ GRAMMAR(Template):
     mixin(compiled);
 
     static assert(mixin("MyType.v") == 'v');
-}
 
+}
+/*
 unittest {
     import std.array;
     import std.typecons;
@@ -192,29 +338,40 @@ GRAMMAR(Template):
     Char <- .
     };
     mixin(grammar(_g));
-
     // Replace these identifiers in the input
-    enum __M = "MyStruct";
-    enum __T = "MyType";
+    enum __M = 500;
 
     // some input data.
     enum _d = q{
-        struct {{__T}} {
-            enum v = 'v';
-            struct {{__M}} {
-            };
-            static {{__M}} m;
-        };
+		{{__M}} + 10
     };
+
 
     // Create a compiler from the parse tree.
     struct myCompiler(ParseTree T,alias Parser=myCompiler) {
         mixin Compiler!(T,Parser);
         // Override two node types: GRAMMAR.Text and identifier.
         // GRAMMAR.Text is just the matches array values concantenated.
-        mixin (compilerOverride!("GRAMMAR.Text","T.matches.join"));
+        //mixin (compilerOverride!("GRAMMAR.Text","T.matches.join"));
         // identifier returns a mixin of the matches value.
-        mixin (compilerOverride!("identifier","mixin(T.matches.join)"));
+        //mixin (compilerOverride!("identifier","mixin(T.matches.join)"));
+
+		@MatchName("GRAMMAR.Text")
+		static auto joinMatches(ParseTree t) {
+			return t.matches.join;
+		}
+		@MatchName("identifier")
+		static auto joinMatchesMixin(ParseTree t) {
+			//return mixin(T.matches.join);
+			return ""~(t.matches.join);
+		}
+
+		mixin (processTypeAnnotations!(myCompiler));
+
+		mixin (compilerOverride!("GRAMMAR.Doc","compileChildNodes.join;"));
+		mixin (compilerOverride!("GRAMMAR.Line","compileChildNodes.join;"));
+		mixin (compilerOverride!("GRAMMAR.Var","compileChildNodes.join;"));
+		mixin (compilerOverride!("GRAMMAR","compileChildNodes.join;"));
     }
 
     pragma(msg,"Compiling:\n"~_d);
@@ -222,10 +379,10 @@ GRAMMAR(Template):
 
     enum compiled = myCompiler!(GRAMMAR!identifier(_d)).compileNode();
     pragma(msg,"Compiled to:\n" ~ compiled);
-    mixin(compiled);
-
-    static assert(mixin("MyType.v") == 'v');
+    auto v = mixin(compiled);
+    static assert(v == 510);
 }
+*/
 
 /**
 The TupleCompiler converts you input to a tuple at compile-time.

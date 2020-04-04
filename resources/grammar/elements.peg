@@ -1,0 +1,26 @@
+BasicElements : 
+    String <~ doublequote (!doublequote Char)* doublequote
+    Numeric <- Scientific / Floating / Integer / Hexa
+    QualifiedIdentifier <- identifier ( :"." identifier)*
+
+    Char   <~ backslash ( doublequote  # '\' Escapes
+                        / quote
+                        / backslash
+                        / [bfnrt]
+                        / [0-2][0-7][0-7]
+                        / [0-7][0-7]?
+                        / 'x' Hex Hex
+                        / 'u' Hex Hex Hex Hex
+                        / 'U' Hex Hex Hex Hex Hex Hex Hex Hex
+                        )
+             / . # Or any char, really
+    Hex     <- [0-9a-fA-F]
+
+    Scientific <~ Floating ( ('e' / 'E' ) Integer )?
+    Floating   <~ Integer ('.' Unsigned )?
+    Unsigned   <~ [0-9]+
+    Integer    <~ Sign? Unsigned
+    Hexa       <~ [0-9a-fA-F]+
+    Sign       <- '-' / '+'
+    Bool       <- "true" / "false"
+
