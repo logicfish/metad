@@ -1,15 +1,15 @@
 /++
 This module was automatically generated from the following grammar:
 
-INIGrammar : 
-    Grammar <- Statement*
-    Statement <- Section / Comment
-    Comment <- "#" (!:endOfLine)* :endOfLine
-    Section <- SectionHead (Declaration)*
-    SectionHead <- :"[" SectionIdentifier :"]" ( :endOfLine / endOfInput )
-    SectionIdentifier <- identifier ( :"." identifier)?
-    Declaration <- identifier :"=" Literal ( :endOfLine / endOfInput )
-    Literal <- BasicElements.String /  BasicElements.Numeric / BasicElements.Bool
+INIGrammar : 
+    Grammar <- Statement*
+    Statement <- Section / Comment
+    Comment <- "#" (!:endOfLine)* :endOfLine
+    Section <- SectionHead (Declaration)*
+    SectionHead <- :"[" SectionIdentifier :"]" ( :endOfLine / endOfInput )
+    SectionIdentifier <- identifier ( :"." identifier)?
+    Declaration <- identifier :"=" Literal ( :endOfLine / endOfInput )
+    Literal <- BasicElements.String /  BasicElements.Numeric / BasicElements.Bool
 
 
 +/
