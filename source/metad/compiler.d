@@ -283,9 +283,9 @@ GRAMMAR(Template):
         struct {{__T}} {
             enum v = 'v';
             struct {{__M}} {
-            };
+            }
             static {{__M}} m;
-        };
+        }
     };
 
     // Create a compiler from the parse tree.
@@ -313,7 +313,8 @@ GRAMMAR(Template):
     pragma(msg,"Compiled to:\n" ~ compiled);
     mixin(compiled);
 
-    static assert(mixin("MyType.v") == 'v');
+    //static assert(mixin("MyType.v") == 'v');
+    static assert(MyType.v == 'v');
 
 }
 /*
