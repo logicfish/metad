@@ -1,32 +1,32 @@
-/++
+/+ DO NOT EDIT BY HAND!
 This module was automatically generated from the following grammar:
 
-BasicElements : 
-    String <~ doublequote (!doublequote Char)* doublequote
-    Numeric <- Scientific / Floating / Integer / Hexa
-    QualifiedIdentifier <- identifier ( :"." identifier)*
-
-    Char   <~ backslash ( doublequote  # '\' Escapes
-                        / quote
-                        / backslash
-                        / [bfnrt]
-                        / [0-2][0-7][0-7]
-                        / [0-7][0-7]?
-                        / 'x' Hex Hex
-                        / 'u' Hex Hex Hex Hex
-                        / 'U' Hex Hex Hex Hex Hex Hex Hex Hex
-                        )
-             / . # Or any char, really
-    Hex     <- [0-9a-fA-F]
-
-    Scientific <~ Floating ( ('e' / 'E' ) Integer )?
-    Floating   <~ Integer ('.' Unsigned )?
-    Unsigned   <~ [0-9]+
-    Integer    <~ Sign? Unsigned
-    Hexa       <~ [0-9a-fA-F]+
-    Sign       <- '-' / '+'
-    Bool       <- "true" / "false"
-
+BasicElements : 
+    String <~ doublequote (!doublequote Char)* doublequote
+    Numeric <- Scientific / Floating / Integer / Hexa
+    QualifiedIdentifier <- identifier ( :"." identifier)*
+
+    Char   <~ backslash ( doublequote  # '\' Escapes
+                        / quote
+                        / backslash
+                        / [bfnrt]
+                        / [0-2][0-7][0-7]
+                        / [0-7][0-7]?
+                        / 'x' Hex Hex
+                        / 'u' Hex Hex Hex Hex
+                        / 'U' Hex Hex Hex Hex Hex Hex Hex Hex
+                        )
+             / . # Or any char, really
+    Hex     <- [0-9a-fA-F]
+
+    Scientific <~ Floating ( ('e' / 'E' ) Integer )?
+    Floating   <~ Integer ('.' Unsigned )?
+    Unsigned   <~ [0-9]+
+    Integer    <~ Sign? Unsigned
+    Hexa       <~ [0-9a-fA-F]+
+    Sign       <- '-' / '+'
+    Bool       <- "true" / "false"
+
 
 
 +/
@@ -36,7 +36,7 @@ public import pegged.peg;
 import std.algorithm: startsWith;
 import std.functional: toDelegate;
 
-struct GenericBasicElements(TParseTree)
+@safe struct GenericBasicElements(TParseTree)
 {
     import std.functional : toDelegate;
     import pegged.dynamic.grammar;
@@ -44,12 +44,12 @@ struct GenericBasicElements(TParseTree)
     struct BasicElements
     {
     enum name = "BasicElements";
-    static ParseTree delegate(ParseTree)[string] before;
-    static ParseTree delegate(ParseTree)[string] after;
-    static ParseTree delegate(ParseTree)[string] rules;
+    static ParseTree delegate(ParseTree) @safe [string] before;
+    static ParseTree delegate(ParseTree) @safe [string] after;
+    static ParseTree delegate(ParseTree) @safe [string] rules;
     import std.typecons:Tuple, tuple;
     static TParseTree[Tuple!(string, size_t)] memo;
-    static this()
+    static this() @trusted
     {
         rules["String"] = toDelegate(&String);
         rules["Numeric"] = toDelegate(&Numeric);
@@ -68,7 +68,7 @@ struct GenericBasicElements(TParseTree)
 
     template hooked(alias r, string name)
     {
-        static ParseTree hooked(ParseTree p)
+        static ParseTree hooked(ParseTree p) @safe
         {
             ParseTree result;
 
@@ -87,13 +87,13 @@ struct GenericBasicElements(TParseTree)
             return result;
         }
 
-        static ParseTree hooked(string input)
+        static ParseTree hooked(string input) @safe
         {
             return hooked!(r, name)(ParseTree("",false,[],input));
         }
     }
 
-    static void addRuleBefore(string parentRule, string ruleSyntax)
+    static void addRuleBefore(string parentRule, string ruleSyntax) @safe
     {
         // enum name is the current grammar name
         DynamicGrammar dg = pegged.dynamic.grammar.grammar(name ~ ": " ~ ruleSyntax, rules);
@@ -103,21 +103,21 @@ struct GenericBasicElements(TParseTree)
         before[parentRule] = rules[dg.startingRule];
     }
 
-    static void addRuleAfter(string parentRule, string ruleSyntax)
+    static void addRuleAfter(string parentRule, string ruleSyntax) @safe
     {
         // enum name is the current grammar named
         DynamicGrammar dg = pegged.dynamic.grammar.grammar(name ~ ": " ~ ruleSyntax, rules);
-        foreach(name,rule; dg.rules)
+        foreach(ruleName,rule; dg.rules)
         {
-            if (name != "Spacing")
-                rules[name] = rule;
+            if (ruleName != "Spacing")
+                rules[ruleName] = rule;
         }
         after[parentRule] = rules[dg.startingRule];
     }
 
-    static bool isRule(string s)
+    static bool isRule(string s) pure nothrow @nogc
     {
-		import std.algorithm : startsWith;
+        import std.algorithm : startsWith;
         return s.startsWith("BasicElements.");
     }
     mixin decimateTree;

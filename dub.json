@@ -4,7 +4,7 @@
         "Mark Fisher"
     ],
     "dependencies": {
-        "pegged": "~>0.4.4"
+        "pegged": "~>0.4.9"
     },
     "stringImportPaths": [ "resources" ],
     "description": "MetaD compile time compiler.",
@@ -18,7 +18,8 @@
         {
             "name": "generate",
             "targetType": "executable",
-            "versions": [ "ElementsGrammar_Generate","INIGrammar_Generate" ]
+            "versions": [ "ElementsGrammar_Generate","INIGrammar_Generate" ],
+            "excludedSourceFiles" : [ "source/metad/gen/**/*" ]
         }
     ]
     
