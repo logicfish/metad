@@ -108,6 +108,7 @@ template Compiler(ParseTree T,alias Parser) {
 
 	++/
     template nodeOverride(string Cond,string Func) {
+	import std.array;
         /*enum nodeOverride = q{
             static if(__C__) {
                 static auto compileNode() {
